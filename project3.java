@@ -1,9 +1,12 @@
 import java.lang.*;
 import java.io.*;
 import java.util.Scanner;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.channels.FileChannel;
 
 public class project3 {
-    public int minDegree = 3;
+    /*public int minDegree = 3;
     public int maxKeys = (2*minDegree) - 1;
     public int maxChildren = 2*minDegree;
 
@@ -18,24 +21,16 @@ public class project3 {
         Node(int id) {
             this.blockID = id;
         }
-    }
+    }*/
 
 	public static void main(String[] args) {
 
 		try {
             Scanner s = new Scanner(System.in);
-            System.out.println("-----------------------------------------------------------------"); //print a menu of commands
-            System.out.println("                            Menu");
-            System.out.println("-----------------------------------------------------------------\n");
-            System.out.println("\t create  - create a new index file");
-            System.out.println("\t insert  - inserting the key and value into the B-Tree");
-            System.out.println("\t search  - search the index for the key");
-            System.out.println("\t load    - read the file and insert each pair into the index file");
-            System.out.println("\t print   - print every key/value pair in the index to standard output");
-            System.out.println("\t extract - save every key/value pair in the index as comma separated pairs to the file\n");
-            System.out.println("-----------------------------------------------------------------");
-            System.out.print("Enter Command: ");
-
+            if (args.length < 2) {
+                System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+                System.exit(1);
+            }
 			String userCommand = args[0];
 
             if (userCommand.equals("create")) {
@@ -51,14 +46,30 @@ public class project3 {
             } else if (userCommand.equals("extract")) {
                 System.out.print("Simulate extract");
             } else {
-                System.out.println("\nUnknown command. Please try again.");
+                System.out.println("!!ERROR: Unknown command. Please try again.");
             }
         } catch(Exception ex) {
-            System.err.println("Error: " + ex.getMessage());
+            System.err.println("!!ERROR: " + ex.getMessage());
             System.exit(1);
         }
     }
     static void create(String[] args) {
-        String indexFile = args[1];
+        if (args.length != 2) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+        String path = args[1];
+        File indexFile = new File(path);
+        if (indexFile.exists() && indexFile.isFile()) {
+            System.err.println("!!ERROR: File already exists: "+path);
+            System.exit(1);
+        }
+        try (RandomAccessFile newFile = new RandomAccessFile(path, "rw"); FileChannel channel = newFile.getChannel()) {
+            
+        } catch (IOException ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+        
     }
 }

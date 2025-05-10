@@ -24,3 +24,33 @@
 - I understand that my program will get the filename from String[] args, but I am not sure how to check if that file already exists; let me look into that
 - A Google search revealed that I should import some library that can check for me, so I will go ahead and do that soon
 - I am pretty tired now, so I think I will take a proper break and end the session
+
+### Saturday, May 10th, 2025
+#### 10:29AM
+- Since last session, I have completed Homework 5, Question 5, which was coding a B-Tree 
+    - I now have a much better understanding of B-Trees and how to implement them
+    - I am hoping that I can reuse some of that code in my Project 3
+- I am still planning on implementing the "create" index file command for this current session
+    - According to Google, in order to check if a file already exists in a folder, I need to import Java's File library and use their built-in functions, so I will do that accordingly
+    - It seems easy-enough
+
+#### 10:41AM
+- Checking for an existing file under the "create" command works!
+- However, I still need to handle error-checking for if the user does not input any commands
+
+#### 10:57AM
+- I added checking to make sure the user enters in enough arguments
+- However, that conflicted with my menu of commands, since the user would have to enter in 0 arguments to see the menu
+- Since the menu of commands is not required/the TA would alreday know the menu of commands, I will just omit it altogether
+- Next, I will work on the actual creating a new file!
+
+#### 11:07AM
+- The create file works!
+- However, I think I did not look ahead far enough, as the new file will also need a Header "node" as the file's first block
+    - I am assuming the Header node needs to be appended at file creation
+- Instead of creating a Java File, I think it needs to be a Java RandomAccessFile since the user needs to also "search" for key/value pairs and possibly "insert" in the middle of nodes
+    - I am assuming a FileWriter also works since, either way, new nodes would be appended to the end of the file, but a RandomAccessFile seems more universal so I will use it just in case
+
+#### 11:24AM
+- I am having trouble writing to the actual file
+- After looking around at the Oracle Java docs, I think I will use a FileChannel to write to the file, using the .getChannel() method
