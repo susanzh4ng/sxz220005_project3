@@ -3,9 +3,12 @@ import java.io.*;
 import java.util.Scanner;
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 
 public class project3 {
+    static public String magic = "4348PRJ3"; 
+    static public int blockSize = 512;
     /*public int minDegree = 3;
     public int maxKeys = (2*minDegree) - 1;
     public int maxChildren = 2*minDegree;
@@ -60,16 +63,21 @@ public class project3 {
         }
         String path = args[1];
         File indexFile = new File(path);
-        if (indexFile.exists() && indexFile.isFile()) {
+        if (indexFile.exists() && indexFile.isFile()) { //If that file already exists, fail with an error message
             System.err.println("!!ERROR: File already exists: "+path);
             System.exit(1);
         }
-        try (RandomAccessFile newFile = new RandomAccessFile(path, "rw"); FileChannel channel = newFile.getChannel()) {
-            
+        try (RandomAccessFile newFile = new RandomAccessFile(path, "rw")) { //Create a new index file
+            byte[] magicNum = magic.getBytes(StandardCharsets.US_ASCII); //the magic number as a sequence of ASCII values
+            newFile.write(magicNum); //first 8 bytes of the Header field
+            newFile.writeLong(0L); //second 8 bytes; the ID of the block containing the root node
+            newFile.writeLong(1L); //third 8 bytes; the ID of the next block to be added to the file
+            for (int i=24; i<blockSize; i++) {
+                newFile.writeByte(0); //the remaining bytes are unused
+            }
         } catch (IOException ex) {
             System.err.println("!!ERROR: " + ex.getMessage());
             System.exit(1);
         }
-        
     }
 }

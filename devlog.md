@@ -53,4 +53,14 @@
 
 #### 11:24AM
 - I am having trouble writing to the actual file
-- After looking around at the Oracle Java docs, I think I will use a FileChannel to write to the file, using the .getChannel() method
+
+#### 2:07PM
+- I took a break, and I am now continuing on the "create" command
+- I got the Magic Number to write in the header block, but all other block ID's are showing up as NULL
+- I think the issue is when I am writer the content to the index file
+
+#### 3:10PM
+- I was able to write the Header block in a new file!
+- There were a lot of issues in writing to the file, and I ultimately used .writeLong() function to write the block ID's
+- It also took a while to install hexdump on my laptop in order to view my index file
+- Currently, my index file matches Professor Salazar's example in class, so I am good to move forward! The "create" command is finished!
