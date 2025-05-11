@@ -88,3 +88,17 @@
     - I was able to access the location of the Node by multiply the block ID and 512 (the block size)
 - I also had to completely restructure my Node class and move some functions over to the project 3 program for better access
     - I also made all attributes and functions from Node public because they are used and updated quite often
+
+#### 8:44PM
+- This goes out of order, but next up, I think I will try to implement the "print" command
+    - It will be a lot more helpful than relying on hexdump to check my B-Tree
+- From the Project 3 Overview, it seems like you go through the array of the index files and print it out, block-by-block
+
+#### 9:05M
+- In order to create an array of key/value pairs, I will maintain an ArrayList of them, adding a pair for each block in the index file
+- I think I will create a separate object class for this, as that seems easier to implement than a 2-D Array
+
+#### 10:27M
+- I think I got "print" to work!
+- For the most part, it was pretty straight-forward, just tedious since I had to maintain an Array List of key/value pairs
+- I was also able to reuse some code and the logic from my Homework 5 code!

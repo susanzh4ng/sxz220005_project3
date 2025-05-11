@@ -5,6 +5,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.ArrayList;
 
 public class project3 {
     static public String magic = "4348PRJ3"; 
@@ -13,6 +15,16 @@ public class project3 {
     static public int maxKeys = (2*minDegree) - 1;
     static public int maxChildren = 2*minDegree;
     
+    public static class Pair {
+        public long key;
+        public long value;
+
+        public Pair(long key, long value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
     public static class Node {
         public int currNumKeys;
         public long[] keys;
@@ -65,19 +77,6 @@ public class project3 {
             currNumKeys++;
             values[i+1] = value;
         }
-       
-       /*public void printNode() {
-           int i;
-           for (i=0; i<currNumKeys; i++){ //within a single node, print in key sorted order
-               if(!isLeaf){
-                   children[i].printNode(); //traverse the tree, depth-first order...
-               }
-               System.out.print(keys[i]+" "); //... and print out the values in order.
-           }
-           if(!isLeaf){
-               children[i].printNode(); //traverse the tree, depth-first order...
-           }
-       }*/
     }
 
 	public static void main(String[] args) {
@@ -99,7 +98,7 @@ public class project3 {
             } else if (userCommand.equals("load")) {
                 System.out.print("Simulate load");
             } else if (userCommand.equals("print")) {
-                System.out.print("Simulate print");
+                printOut(args);
             } else if (userCommand.equals("extract")) {
                 System.out.print("Simulate extract");
             } else {
@@ -322,6 +321,54 @@ public class project3 {
             System.err.println("!!ERROR: " + ex.getMessage());
             System.exit(1);
             return null;
+        }
+    }
+    
+    static void printOut (String[] args) {
+        if (args.length != 2) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+        String path = args[1];
+        try (RandomAccessFile indexFile = new RandomAccessFile(path, "r")) {
+            indexFile.seek(8); //first 8 bytes of the Header field
+            long rootID = indexFile.readLong(); //the ID of the block containing the root node
+        
+
+            if (rootID == 0) {
+                System.out.println();
+                return;
+            }
+
+            List<Pair> pairs = new ArrayList<>();
+            insertPairs(indexFile, rootID, pairs);
+
+            for (Pair p : pairs) {
+                System.out.println("Key = "+p.key+", Value = "+p.value);
+            }
+        } catch (IOException ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+    }
+    static void insertPairs (RandomAccessFile file, long ID, List<Pair> pairs) {
+        try {
+            Node node = readNode(file, ID);
+            int i;
+            for (i=0; i<node.currNumKeys; i++) {
+                if (!node.isLeaf()){
+                    insertPairs(file, node.children[i], pairs); //traverse the tree, depth-first order...
+                }
+                if ((node.keys[i] != 0) || (node.values[i] != 0)) {
+                    pairs.add(new Pair(node.keys[i], node.values[i]));
+                }
+            }
+            if ((!node.isLeaf()) && (i<maxChildren) && (node.children[i] != 0)){
+                insertPairs(file, node.children[i], pairs); //traverse the tree, depth-first order...
+            }
+        } catch (Exception ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
         }
     }
 }
