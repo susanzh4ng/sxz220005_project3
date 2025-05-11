@@ -17,7 +17,6 @@
 
 #### 6:15PM
 - I think I finished the Node class, as I cannot test it yet
-- I will actually first test it with the minimal degree being 3
 
 #### 6:35PM
 - I decided to take a "brain break" from the B-Tree and start on the user commands, starting with "create"
@@ -64,3 +63,28 @@
 - There were a lot of issues in writing to the file, and I ultimately used .writeLong() function to write the block ID's
 - It also took a while to install hexdump on my laptop in order to view my index file
 - Currently, my index file matches Professor Salazar's example in class, so I am good to move forward! The "create" command is finished!
+
+#### 3:24PM
+- Next, I think I will start implementing the Node, which I can mainly take from my Homework 5, Question 5
+
+#### 3:39PM
+- Next, I will begin on the "insert" command
+
+#### 3:55PM
+- I think there is a chance that I can alter my Homework 5, Question 5 code for the "insert" command as well
+
+#### 5:13PM
+- I am getting a lot of errors, mainly for the disconnet between Project 3's requirements - especially writing to the index file - and my Homework 5, Question 5 code
+- There is a pretty good chance that I will have to restart completely since there have been so many bugs
+
+#### 5:52PM
+- My code is starting to get pretty convoluted, as a "simple" insert also requires inserting keys, checking to see if the key has already been inserted, checking to see if the node it is being inserted into is the root, if the root is node, if the node is full, how to split the node, etc.
+
+#### 8:20PM
+- That took *quite* a while but my "insert" command works!
+    - Using hexdump, I see that it matches Professor Salazar's example!
+- Because I wanted to keep it consistent when reading from the index file and writing to the index file, I made all keys and values be of data type long
+- Reading the Node from the index file and writing/updating the Node to the index file definitely tricky, especially since I needed it to perform hexdump and see if my index file was updating correctly
+    - I was able to access the location of the Node by multiply the block ID and 512 (the block size)
+- I also had to completely restructure my Node class and move some functions over to the project 3 program for better access
+    - I also made all attributes and functions from Node public because they are used and updated quite often

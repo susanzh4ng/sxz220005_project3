@@ -9,22 +9,76 @@ import java.nio.ByteBuffer;
 public class project3 {
     static public String magic = "4348PRJ3"; 
     static public int blockSize = 512;
-    /*public int minDegree = 3;
-    public int maxKeys = (2*minDegree) - 1;
-    public int maxChildren = 2*minDegree;
-
-    public Node() {
-        int blockID; //The block id this node is stored in
-        int parentBlockID; //The block id this nodes parent is located
-        int numKeys; //Number of key/value pairs currently in this node
-        int[] keys = new int[maxKeys]; //A sequence of 19 64-bit keys
-        int[] values = new int[maxKeys]; //A sequence of 19 64-bit values
-        int[] children = new int[maxChildren]; //A sequence of 20 64-bit offsets; these block ids are the child pointers for this node
-
-        Node(int id) {
-            this.blockID = id;
+    static public int minDegree = 10;
+    static public int maxKeys = (2*minDegree) - 1;
+    static public int maxChildren = 2*minDegree;
+    
+    public static class Node {
+        public int currNumKeys;
+        public long[] keys;
+        public long[] values;
+        public long[] children;
+        public long blockID;
+        public long parentID;
+        
+        public Node(long blockID, long parentID) {
+            this.blockID = blockID;
+            this.parentID = parentID;
+            this.keys = new long[maxKeys];
+            this.values = new long[maxKeys];
+            this.children = new long[maxChildren];
+            this.currNumKeys = 0;
         }
-    }*/
+
+        public boolean isLeaf() {
+            for (int i=0; i<maxChildren; i++) {
+                if (children[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        /*public Node searchKey(int key) {
+            int i = 0;
+            while (i<currNumKeys && key>keys[i]){
+                i++;
+            }
+            if (i<currNumKeys && keys[i] == key){ //if key matches, return Node
+                return this;
+            }
+            if(isLeaf){ //if closest node is a leaf, then key is not found
+                return null;
+            }
+            
+            return children[i].searchKey(key); //recursively search in subtree
+        }*/
+        
+        public void insertKey(long key, long value){
+            int i = currNumKeys-1;
+            while (i>= 0 && key<keys[i]){ //Move all larger keys/values ahead ...
+                keys[i+1] = keys[i];
+                values[i+1] = values[i];
+                i--;
+            }
+            keys[i+1] = key; //... and insert key/value at ordered position
+            currNumKeys++;
+            values[i+1] = value;
+        }
+       
+       /*public void printNode() {
+           int i;
+           for (i=0; i<currNumKeys; i++){ //within a single node, print in key sorted order
+               if(!isLeaf){
+                   children[i].printNode(); //traverse the tree, depth-first order...
+               }
+               System.out.print(keys[i]+" "); //... and print out the values in order.
+           }
+           if(!isLeaf){
+               children[i].printNode(); //traverse the tree, depth-first order...
+           }
+       }*/
+    }
 
 	public static void main(String[] args) {
 
@@ -39,7 +93,7 @@ public class project3 {
             if (userCommand.equals("create")) {
                 create(args);
             } else if (userCommand.equals("insert")) {
-                System.out.print("Simulate insert");
+                insert(args);
             } else if (userCommand.equals("search")) {
                 System.out.print("Simulate search");
             } else if (userCommand.equals("load")) {
@@ -78,6 +132,196 @@ public class project3 {
         } catch (IOException ex) {
             System.err.println("!!ERROR: " + ex.getMessage());
             System.exit(1);
+        }
+    }
+
+    static void insert (String[] args) throws IOException {
+         if (args.length != 4) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+        String path = args[1];
+        long key = Long.parseLong(args[2]);
+        long value = Long.parseLong(args[3]);
+
+        try (RandomAccessFile indexFile = new RandomAccessFile(path, "rw")) { //Create instance of an index file
+            indexFile.seek(8); //first 8 bytes of the Header field
+            long rootID = indexFile.readLong(); //the ID of the block containing the root node
+            long nextBlockID = indexFile.readLong(); //the ID of the next block to be added to the file
+
+            if (rootID == 0){ //if tree is empty ...
+                Node newRoot = new Node(1, 0); //... then create new root ...
+                newRoot.insertKey(key, value);
+                writeNode(indexFile, newRoot);
+
+                indexFile.seek(8); //... and update the file with the new root
+                indexFile.writeLong(1L);
+                indexFile.writeLong(2L);
+            } else { //if tree is not empty...
+                Node ogRoot = readNode(indexFile, rootID);
+                if (ogRoot.currNumKeys == maxKeys){ //if root is full...
+                    Node newRoot = new Node(nextBlockID, 0); //... then create new root
+                    ogRoot.parentID = nextBlockID;
+                    writeNode(indexFile, ogRoot);
+
+                    newRoot.children[0] = rootID; //...with root being new root's first child
+                    splitChild(indexFile, newRoot, 0, ogRoot); //split og root
+
+                    indexFile.seek(8); //... and update the file with the root
+                    indexFile.writeLong(nextBlockID);
+                    indexFile.writeLong(nextBlockID+1);
+
+                    insertNode(indexFile, newRoot, key, value);
+                } else { //if root is not full...
+                    insertNode(indexFile, ogRoot, key, value); //then enter key into the root node
+                }
+            }
+        } catch (NumberFormatException ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+
+        
+    }
+    static void insertNode (RandomAccessFile file, Node node, long key, long value) {
+        int i = node.currNumKeys - 1;
+        if (node.isLeaf()) {
+            while (i>= 0 && key<node.keys[i]){ //Move all larger keys/values ahead ...
+                node.keys[i+1] = node.keys[i];
+                node.values[i+1] = node.values[i];
+                i--;
+            }
+            if (i>=0 && key==node.keys[i]) {//if key already exists ...
+                node.values[i] = value; //... then update key/value pair
+            } else {
+                node.keys[i+1] = key; //... else, insert key/value at ordered position
+                node.currNumKeys++;
+                node.values[i+1] = value;
+            }
+            writeNode(file, node);
+        } else {
+            while (i>=0 && key<node.keys[i]){ //find child node to insert key
+                i--;
+            }
+            i++;
+
+            if (i>=0 && i<=node.currNumKeys && key==node.keys[i-1]) {//if key already exists ...
+                node.values[i-1] = value; //... then update key/value pair
+                writeNode(file, node);
+                return;
+            }
+        Node childNode = readNode(file, node.children[i]);
+            if (childNode.currNumKeys == maxKeys) {
+                splitChild(file, node, i, childNode);
+            }
+            if (key > node.keys[i]) {
+                i++;
+                childNode = readNode(file, node.children[i]);
+            } else if (key == node.keys[i]) {
+                node.values[i] = value;
+                writeNode(file, node);
+                return;
+            }
+        insertNode(file, childNode, key, value); //recursively insert in subtree
+        }
+    }
+    static void splitChild(RandomAccessFile file, Node parent, int i, Node og){
+        try {
+        file.seek(16);
+        long nextBlockID = file.readLong();
+        
+        Node newNode = new Node(nextBlockID, parent.blockID);
+        file.seek(16);
+        file.writeLong(nextBlockID+1);
+
+        newNode.currNumKeys = minDegree-1; //create a new node with (minDegree-1) keys
+        for (int j=0; j<minDegree-1; j++){
+            newNode.keys[j] = og.keys[j+minDegree]; //new node's keys are the latter half of the original node
+            newNode.values[j] = og.values[j+minDegree];
+            og.keys[j+minDegree] = 0;
+            og.values[j+minDegree] = 0;
+        }
+        if(!og.isLeaf()){
+           for(int j=0; j<minDegree; j++){
+                newNode.children[j] = og.children[j+minDegree]; //og node's children are the transferred to the new node
+                og.children[j+minDegree] = 0;
+
+                if (newNode.children[i] != 0) {
+                    Node childNode = readNode(file, newNode.children[i]);
+                    childNode.parentID = newNode.blockID;
+                    writeNode(file, childNode);
+                }
+            }
+        }
+        
+        newNode.currNumKeys = minDegree-1;
+        og.currNumKeys = minDegree-1;
+           
+        for (int j=parent.currNumKeys; j>i; j--) {
+            parent.children[j+1] = parent.children[j];
+        }
+        parent.children[i+1] = newNode.blockID;
+
+        for (int j=(parent.currNumKeys)-1; j>=i; j--) {
+            parent.keys[j+1] = parent.keys[j];
+            parent.values[j+1] = parent.values[j];
+        }
+        parent.keys[i] = og.keys[minDegree - 1];
+        parent.values[i] = og.values[minDegree - 1];
+        og.keys[minDegree - 1] = 0;
+        og.values[minDegree - 1] = 0;
+        parent.currNumKeys++;
+        } catch(Exception ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+
+    }
+
+    static void writeNode (RandomAccessFile file, Node node) {
+        try {
+        file.seek(node.blockID * blockSize);
+        file.writeLong(node.blockID);
+        file.writeLong(node.parentID);
+        file.writeLong(node.currNumKeys);
+        for (int i=0; i<maxKeys; i++) {
+            file.writeLong(node.keys[i]);
+        }
+        for (int i=0; i<maxKeys; i++) {
+            file.writeLong(node.values[i]);
+        }
+        for (int i=0; i<maxChildren; i++) {
+            file.writeLong(node.children[i]);
+        }
+        } catch(Exception ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+    }
+    static Node readNode (RandomAccessFile file, long ID) {
+        try {
+            file.seek(ID * blockSize);
+
+            long bID = file.readLong();
+            long pID = file.readLong();
+            int cnumKeys = (int) file.readLong();
+            Node node = new Node(bID, pID);
+            node.currNumKeys = cnumKeys;
+
+            for (int i=0; i<maxKeys; i++) {
+                node.keys[i] = file.readLong();
+            }
+            for (int i=0; i<maxKeys; i++) {
+                node.values[i] = file.readLong();
+            }
+            for (int i=0; i<maxChildren; i++) {
+                node.children[i] = file.readLong();
+            }
+            return node;
+        } catch(Exception ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+            return null;
         }
     }
 }
