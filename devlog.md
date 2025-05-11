@@ -126,3 +126,14 @@
 #### 3:51AM
 - I was able to reference my Homework 5, Question 5 code in my "search" command!
 - As a summary, I read the node from the index file based on it's block ID, then I found the nearest key to the given key, and returned the value at the given key
+
+#### 10:52AM
+- Next, I will work on the "extract" function
+- I am thinking of using a BufferedWriter because I do not know how else to write to a new file within a program
+- I think I can use something similar to the "print" command since both needs to go through the index file and collect key/value pairs
+    - I can use an ArrayList of Pair objects again
+
+#### 11:26AM
+- Finished with the "extract" command
+- I still have to create my README.md and compress my files into a .zip file, but I think this is my final devlog.md entry for Project 1!
+- Thank you so much for reading😀

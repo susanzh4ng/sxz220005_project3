@@ -86,7 +86,7 @@ public class project3 {
             } else if (userCommand.equals("print")) {
                 printOut(args);
             } else if (userCommand.equals("extract")) {
-                System.out.print("Simulate extract");
+                extract(args);
             } else {
                 System.out.println("!!ERROR: Unknown command. Please try again.");
             }
@@ -212,50 +212,54 @@ public class project3 {
     }
     static void splitChild(RandomAccessFile file, Node parent, int i, Node og){
         try {
-        file.seek(16);
-        long nextBlockID = file.readLong();
-        
-        Node newNode = new Node(nextBlockID, parent.blockID);
-        file.seek(16);
-        file.writeLong(nextBlockID+1);
+            file.seek(16);
+            long nextBlockID = file.readLong();
+            
+            Node newNode = new Node(nextBlockID, parent.blockID);
+            file.seek(16);
+            file.writeLong(nextBlockID+1);
 
-        newNode.currNumKeys = minDegree-1; //create a new node with (minDegree-1) keys
-        for (int j=0; j<minDegree-1; j++){
-            newNode.keys[j] = og.keys[j+minDegree]; //new node's keys are the latter half of the original node
-            newNode.values[j] = og.values[j+minDegree];
-            og.keys[j+minDegree] = 0;
-            og.values[j+minDegree] = 0;
-        }
-        if(!og.isLeaf()){
-           for(int j=0; j<minDegree; j++){
-                newNode.children[j] = og.children[j+minDegree]; //og node's children are the transferred to the new node
-                og.children[j+minDegree] = 0;
+            newNode.currNumKeys = minDegree-1; //create a new node with (minDegree-1) keys
+            for (int j=0; j<minDegree-1; j++){
+                newNode.keys[j] = og.keys[j+minDegree]; //new node's keys are the latter half of the original node
+                newNode.values[j] = og.values[j+minDegree];
+                og.keys[j+minDegree] = 0;
+                og.values[j+minDegree] = 0;
+            }
+            if(!og.isLeaf()){
+                for(int j=0; j<minDegree; j++){
+                    newNode.children[j] = og.children[j+minDegree]; //og node's children are the transferred to the new node
+                    og.children[j+minDegree] = 0;
 
-                if (newNode.children[i] != 0) {
-                    Node childNode = readNode(file, newNode.children[i]);
-                    childNode.parentID = newNode.blockID;
-                    writeNode(file, childNode);
+                    if (newNode.children[j] != 0) {
+                        Node childNode = readNode(file, newNode.children[j]);
+                        childNode.parentID = newNode.blockID;
+                        writeNode(file, childNode);
+                    }
                 }
             }
-        }
-        
-        newNode.currNumKeys = minDegree-1;
-        og.currNumKeys = minDegree-1;
-           
-        for (int j=parent.currNumKeys; j>i; j--) {
-            parent.children[j+1] = parent.children[j];
-        }
-        parent.children[i+1] = newNode.blockID;
+            
+            //newNode.currNumKeys = minDegree-1;
+            og.currNumKeys = minDegree-1;
+            
+            for (int j=parent.currNumKeys; j>i; j--) {
+                parent.children[j+1] = parent.children[j];
+            }
+            parent.children[i+1] = newNode.blockID;
 
-        for (int j=(parent.currNumKeys)-1; j>=i; j--) {
-            parent.keys[j+1] = parent.keys[j];
-            parent.values[j+1] = parent.values[j];
-        }
-        parent.keys[i] = og.keys[minDegree - 1];
-        parent.values[i] = og.values[minDegree - 1];
-        og.keys[minDegree - 1] = 0;
-        og.values[minDegree - 1] = 0;
-        parent.currNumKeys++;
+            for (int j=(parent.currNumKeys)-1; j>=i; j--) {
+                parent.keys[j+1] = parent.keys[j];
+                parent.values[j+1] = parent.values[j];
+            }
+            parent.keys[i] = og.keys[minDegree - 1];
+            parent.values[i] = og.values[minDegree - 1];
+            og.keys[minDegree - 1] = 0;
+            og.values[minDegree - 1] = 0;
+            parent.currNumKeys++;
+
+            writeNode(file, og);
+            writeNode(file, newNode);
+            writeNode(file, parent);
         } catch(Exception ex) {
             System.err.println("!!ERROR: " + ex.getMessage());
             System.exit(1);
@@ -447,6 +451,45 @@ public class project3 {
         } catch (Exception ex) {
             System.err.println("!!!ERROR: " + ex.getMessage());
             return null;
+        }
+    }
+    static void extract (String[] args) throws IOException {
+        if (args.length != 3) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+
+        String path = args[1];
+        File indexP = new File(path);
+        if (!indexP.exists() || !indexP.isFile()) { //If that file already exists, fail with an error message
+            System.err.println("!!ERROR: Invalid index file: "+path);
+            System.exit(1);
+        }
+        try (RandomAccessFile indexFile = new RandomAccessFile(path, "r")) {
+
+
+            String csvPath = args[2];
+            File csv = new File(csvPath);
+            if (csv.exists() && csv.isFile()) { //If that file already exists, fail with an error message
+                System.err.println("!!ERROR: File already exists: "+csvPath);
+                System.exit(1);
+            }
+
+            try (RandomAccessFile file = new RandomAccessFile(path, "r")) { //Create a new .csv file
+                file.seek(8);
+                long rootID = file.readLong();
+                List<Pair> pairs = new ArrayList<>();
+                if (rootID != 0) {
+                    insertPairs(file, rootID, pairs);
+                }
+
+                try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(csvPath))) {
+                    for (Pair p : pairs) {
+                        writer.write(p.key+","+p.value);
+                        writer.newLine();
+                    }
+                }
+            }
         }
     }
 }
