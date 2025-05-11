@@ -106,12 +106,23 @@
 ### Sunday, May 11th, 2025
 #### 2:45AM
 - To be blatantly honest, since last check-in, I have been working on the "load" command
-- I ran into so many bugs and error and have tried so many debugging techniques and tested out my code so many times but it always went completely over my head and it made my code mo much more convoluted
+- I ran into so many bugs and error and have tried so many debugging techniques and tested out my code so many times but it always went completely over my head and it made my code so much more convoluted
 - Ultimately, I will still attempt the "load" command and show my thought process, but the real issue lies in my "insert" command
     -"insert" works until the root node has to split
     - I honestly just have to move on
 
-- Having to do `git reset --hard` also overrode my devlog entries, but the summary is:
+- Having to do `git reset --hard` also overrode my devlog entries, but the summary for my "load" command is:
     - my program line-by-line read in the .csv file
     - split each line at the comma, designating the first integer as the key and the second integer as the value of the key/value pair
     - finally, each pair uses the "insert" command to insert it into the B-tree
+
+#### 3:09AM
+- Next, I will try and implement the "search" command
+
+#### 3:19AM
+- It seems like I can follow a similar structure to what I did for the "print" command, as they both expect you to perform depth-first search down the tree to find the key
+    - Once again, I can use a helper function and implement recursion
+
+#### 3:51AM
+- I was able to reference my Homework 5, Question 5 code in my "search" command!
+- As a summary, I read the node from the index file based on it's block ID, then I found the nearest key to the given key, and returned the value at the given key

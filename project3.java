@@ -52,21 +52,6 @@ public class project3 {
             return true;
         }
         
-        /*public Node searchKey(int key) {
-            int i = 0;
-            while (i<currNumKeys && key>keys[i]){
-                i++;
-            }
-            if (i<currNumKeys && keys[i] == key){ //if key matches, return Node
-                return this;
-            }
-            if(isLeaf){ //if closest node is a leaf, then key is not found
-                return null;
-            }
-            
-            return children[i].searchKey(key); //recursively search in subtree
-        }*/
-        
         public void insertKey(long key, long value){
             int i = currNumKeys-1;
             while (i>= 0 && key<keys[i]){ //Move all larger keys/values ahead ...
@@ -95,7 +80,7 @@ public class project3 {
             } else if (userCommand.equals("insert")) {
                 insert(args);
             } else if (userCommand.equals("search")) {
-                System.out.print("Simulate search");
+                search(args);
             } else if (userCommand.equals("load")) {
                 load(args);
             } else if (userCommand.equals("print")) {
@@ -335,7 +320,6 @@ public class project3 {
             indexFile.seek(8); //first 8 bytes of the Header field
             long rootID = indexFile.readLong(); //the ID of the block containing the root node
         
-
             if (rootID == 0) {
                 System.out.println();
                 return;
@@ -373,7 +357,7 @@ public class project3 {
         }
     }
 
-        static void load(String[] args) {
+    static void load(String[] args) {
         if (args.length != 3) {
             System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
             System.exit(1);
@@ -409,6 +393,60 @@ public class project3 {
         } catch (IOException ex) {
             System.err.println("!!ERROR: Failed to read CSV file: " + ex.getMessage());
             System.exit(1);
+        }
+    }
+
+    
+    static void search (String[] args) {
+        if (args.length != 3) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+        
+        String indexPath = args[1];
+        long key = Long.parseLong(args[2]); 
+        try (RandomAccessFile indexFile = new RandomAccessFile(indexPath, "r")) {
+            indexFile.seek(8); //first 8 bytes of the Header field
+            long rootID = indexFile.readLong(); //the ID of the block containing the root node
+        
+            if (rootID == 0) {
+                System.out.println("Empty tree; key is not found!");
+                return;
+            }
+
+            Long value = searchNode(indexFile, rootID, key);
+            if (value != null) {
+                System.out.println("Value '"+value+"' is at key '"+key+"'");
+            } else {
+                System.out.println("Key is not found!");
+            }
+        } catch (IOException ex) {
+            System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+    }
+    static Long searchNode (RandomAccessFile file, long ID, long key) {
+        try {
+            Node node = readNode(file, ID);
+            if (node == null) {  // Check if readNode returned null
+                System.err.println("!!ERROR: Failed to read node with ID: " + ID);
+                return null;
+            }
+
+            int i = 0;
+            while (i<node.currNumKeys && key>node.keys[i]) {
+                i++;
+            }
+            if (i<node.currNumKeys && node.keys[i] == key){ //if key matches, return Node
+                return node.values[i];
+            }
+            if((!node.isLeaf()) && (i<node.children.length) && (node.children[i] != 0)){ //if closest node is a leaf, then key is not found
+                return searchNode(file, node.children[i], key); //recursively search in subtree
+            }
+            return null;
+        } catch (Exception ex) {
+            System.err.println("!!!ERROR: " + ex.getMessage());
+            return null;
         }
     }
 }
