@@ -3,6 +3,7 @@ import java.io.*;
 import java.util.Scanner;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -96,7 +97,7 @@ public class project3 {
             } else if (userCommand.equals("search")) {
                 System.out.print("Simulate search");
             } else if (userCommand.equals("load")) {
-                System.out.print("Simulate load");
+                load(args);
             } else if (userCommand.equals("print")) {
                 printOut(args);
             } else if (userCommand.equals("extract")) {
@@ -368,6 +369,45 @@ public class project3 {
             }
         } catch (Exception ex) {
             System.err.println("!!ERROR: " + ex.getMessage());
+            System.exit(1);
+        }
+    }
+
+        static void load(String[] args) {
+        if (args.length != 3) {
+            System.err.println("!!ERROR: Insufficient number of arguments. Please try again!");
+            System.exit(1);
+        }
+        
+        String indexPath = args[1];
+        String csvPath = args[2];        
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(csvPath));
+            for (int j = 0; j < lines.size(); j++) {
+                String line = lines.get(j).trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    try {
+                        long key = Long.parseLong(parts[0].trim());
+                        long value = Long.parseLong(parts[1].trim());
+                        
+                        String[] insertArgs = {"insert", indexPath, String.valueOf(key), String.valueOf(value)};
+                        insert(insertArgs);
+                    } catch (NumberFormatException e) {
+                        System.err.println("!!ERROR: Invalid number format in CSV on line " + (j + 1));
+                    } catch (Exception e) {
+                        System.err.println("!!ERROR: Failed to insert key/value pair on line " + (j + 1));
+                    }
+                } else {
+                    System.err.println("!!ERROR: Invalid CSV format on line " + (j + 1));
+                }
+            } 
+        } catch (IOException ex) {
+            System.err.println("!!ERROR: Failed to read CSV file: " + ex.getMessage());
             System.exit(1);
         }
     }
