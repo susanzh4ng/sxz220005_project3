@@ -135,5 +135,5 @@
 
 #### 11:26AM
 - Finished with the "extract" command
-- I still have to create my README.md and compress my files into a .zip file, but I think this is my final devlog.md entry for Project 1!
+- I still have to create my README.md and compress my files into a .zip file, but I think this is my final devlog.md entry for Project 3!
 - Thank you so much for reading😀
